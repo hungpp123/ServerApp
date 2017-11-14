@@ -4,6 +4,7 @@ var bodyParser = require('body-parser');
 var mongoose = require('mongoose');
 var session = require('express-session');
 var MongoStore = require('connect-mongo')(session);
+var mongojs = require('mongojs');
 
 //connect to MongoDB
 mongoose.connect('mongodb://localhost/testForAuth',{ useMongoClient: true });
@@ -31,10 +32,10 @@ app.use(bodyParser.urlencoded({ extended: false }));
 
 
 // serve static files from template
-app.use(express.static(__dirname + '/templateLogReg'));
+//app.use(express.static(__dirname + '/templateLogReg'));
 app.use(express.static(__dirname +'/public'));
 app.set("view engine","ejs");
-app.set("views","./views");
+app.set("views","./public/views");
 // include routes
 var routes = require('./routes/router');
 app.use('/', routes);

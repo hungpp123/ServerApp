@@ -1,4 +1,6 @@
 var express = require('express');
+var mongojs = require('mongojs');
+var db = mongojs('testForAuth', ['Users']);
 var router = express.Router();
 var User = require('../models/user');
 var Product = require('../models/product');
@@ -13,7 +15,7 @@ var types=[];
 
 // GET route for reading data
 router.get('/', function (req, res, next) {
-  return res.sendFile(path.join(__dirname + '/templateLogReg/index.html'));
+  res.render('index');
 });
 
 
@@ -72,7 +74,7 @@ router.post('/login', function(req, res, next){
             err.status = 400;
             return next(err);
           } else {
-            var token = jwt.sign({exp: Math.floor(Date.now() / 1000) + (60 * 60* 60),data: user.email,id:user._id}, 'secret');//HMAC SHA256
+            var token = jwt.sign({exp: Math.floor(Date.now() / 1000) + (60 * 60* 60*24),data: user.email,id:user._id}, 'secret');//HMAC SHA256
             return res.send({token:token,user:user});
           }
         }
@@ -178,12 +180,6 @@ router.get('/profile', function (req, res, next) {
     });
 });
 
-router.get('/admin', function (req, res, next) {
-  User.find().exec((err,user)=>{
-  users = user;
-}); 
-  return res.render('admin',{users:users});
-});
 
 router.get('/api',function(req, res, next){
   Product.find({new:1}).exec((err, product) => {
@@ -313,6 +309,68 @@ router.get('/logout', function (req, res, next) {
       }
     });
   }
+});
+
+router.get('/contactlist', function (req, res) {
+  console.log('I received a GET request');
+  User.find(function (err, docs) {
+    console.log(docs);
+    res.json(docs);
+
+  });
+});
+
+router.post('/contactlist', function (req, res) {
+  console.log(req.body);
+  if (req.body.passwordConf==null) {
+    var err = new Error('Passwords do not match.');
+    err.status = 400;
+    res.send("passwords dont match");
+    return next(err);
+  }
+
+  if (req.body.email &&
+    req.body.name &&
+    req.body.passwordConf) {
+
+    var userData = {
+        email: req.body.email,
+        name: req.body.name,
+        password: req.body.passwordConf,
+        passwordConf: req.body.passwordConf,
+        address:req.body.address,
+        phone:req.body.phone
+
+    }
+
+    User.create(userData, function (error, user) {
+      res.json(user);
+    });
+  }
+});
+
+router.delete('/contactlist/:id', function (req, res) {
+  var id = req.params.id;
+  console.log(id);
+  User.remove({_id: mongojs.ObjectId(id)}, function (err, doc) {
+    res.json(doc);
+  });
+});
+
+router.get('/contactlist/:id', function (req, res) {
+  var id = req.params.id;
+  console.log(id);
+  User.findOne({_id: mongojs.ObjectId(id)}, function (err, doc) {
+    res.json(doc);
+  });
+});
+
+router.put('/contactlist/:id', function (req, res) {
+  var id = req.params.id;
+  console.log(req.body.name);
+  User.findOneAndUpdate({_id: mongojs.ObjectId(id)}, {name:req.body.name, password:req.body.passwordConf, passwordConf:req.body.passwordConf, address:req.body.address,phone:req.body.phone},{ new: true }, function (err, user) {
+    res.json(user);
+  });
 });
 
 module.exports = router;
